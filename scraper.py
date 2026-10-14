@@ -3,7 +3,7 @@ import json, re, time, datetime as dt
 import requests
 from bs4 import BeautifulSoup
 
-CHANNELS = ["channel_one", "channel_two"]   # <-- впишите имена каналов без @
+CHANNELS = ["t.me/kyiv_airdef", "https://t.me/+1NyA-dI5fEJmZTMy"]   # <-- впишите имена каналов без @
 MAX_AGE_H = 3
 
 # (название, широта, долгота, [основы слов в нижнем регистре])
