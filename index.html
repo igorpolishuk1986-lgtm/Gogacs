@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="uk"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Карта</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+ html,body{height:100%;margin:0;font-family:system-ui,sans-serif;background:#111;color:#eee}
+ #map{position:absolute;inset:0 0 38% 0}
+ #list{position:absolute;left:0;right:0;bottom:0;height:38%;overflow:auto;padding:8px 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box;background:#1b1b1b;font-size:14px}
+ .m{border-bottom:1px solid #333;padding:6px 0}.m small{color:#999}
+ #top{position:absolute;z-index:1000;top:env(safe-area-inset-top);left:8px;background:#000a;padding:4px 8px;border-radius:8px;font-size:12px}
+</style></head><body>
+<div id="top">завантаження…</div><div id="map"></div><div id="list"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+const map=L.map('map').setView([49,31],6);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:10,attribution:'© OSM'}).addTo(map);
+const layer=L.layerGroup().addTo(map);
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+async function load(){
+ try{
+  const d=await (await fetch('data.json?'+Date.now())).json();
+  layer.clearLayers();
+  const now=Date.now();
+  document.getElementById('list').innerHTML='';
+  d.items.forEach(m=>{
+   const ageMin=(now-new Date(m.time))/60000;
+   const op=Math.max(.25,1-ageMin/180);
+   (m.from||[]).forEach(p=>L.circleMarker([p.lat,p.lon],{radius:9,color:'#e33',fillColor:'#e33',fillOpacity:op,opacity:op})
+     .bindPopup(esc(p.name)+'<br>'+esc(m.text)).addTo(layer));
+   (m.to||[]).forEach(t=>{
+     L.circleMarker([t.lat,t.lon],{radius:6,color:'#fa0',fillOpacity:op,opacity:op}).addTo(layer);
+     (m.from||[]).forEach(f=>L.polyline([[f.lat,f.lon],[t.lat,t.lon]],{color:'#fa0',dashArray:'6 6',opacity:op}).addTo(layer));
+   });
+   const el=document.createElement('div');el.className='m';
+   el.innerHTML='<small>'+new Date(m.time).toLocaleTimeString('uk',{hour:'2-digit',minute:'2-digit'})+' · '+esc(m.ch)+'</small><br>'+esc(m.text);
+   document.getElementById('list').appendChild(el);
+  });
+  document.getElementById('top').textContent='оновлено '+new Date(d.updated).toLocaleTimeString('uk',{hour:'2-digit',minute:'2-digit'})+' · '+d.items.length;
+ }catch(e){document.getElementById('top').textContent='немає даних'}
+}
+load();setInterval(load,60000);
+</script></body></html>
